@@ -16,7 +16,6 @@ model_id = models[default_model_name]
 models_name = list(models.keys())
 default_model_index = models_name.index(default_model_name)
 
-new = ''
 
 # Web App UI 
 st.title("ReadMe Generator app")
@@ -50,13 +49,14 @@ Here is a quick breif about the project also:{user}"""
 
 files = st.file_uploader("Upload a file",accept_multiple_files=True)
 
+generate = st.button('Generate')
+
 # Create a button for the user to generate a README file
-if st.button('Generate'):
+if generate:
   iterable = []
   for file in files:
     if file.name.split(".")[-1] not in extensions:
       st.warning(f"File type {file.name.split('.')[-1]} not supported.")
-      files.remove(file) # Remove the file from the list of the files because it is not vaild
       metadata = None
     else:
       metadata = client.FragmentMetadata(ext=file.name.split(".")[-1])
@@ -94,56 +94,28 @@ if st.button('Generate'):
 
   # Getting the answer
   answers = question_output.answers.iterable[0].text
+  st.session_state['answers'] = answers
+  st.session_state['edit_answer'] = answers
   st.write(answers)
-  # edited_readme = st.text_area("Edit Your README: ", value=answers)
 
+def add_sidebar_buttons():
+  """Add edit and download sidebar buttons."""
+  def edit_callback():
+    st.session_state['edit_answer'] = st.text_area("Edit Answer", value=st.session_state.get('edit_answer', ''), height=500)
+    def save_callback():
+      st.session_state['answers'] = st.session_state['edit_answer']
+      st.write(st.session_state['edit_answer'])
+      add_sidebar_buttons()
+    st.sidebar.button("Save", on_click=save_callback)
 
-  # if st.sidebar.button('Save Your Edited README'):
-  # # When the user clicks the save button, the edited response will be saved in the session state
-  #   st.session_state['answer'] = edited_readme
-  #   new = edited_readme 
-  #   print(new)
-  #   st.success("Response saved successfully!")
-
-  #   # Let User download the response 
-  #   st.sidebar.download_button(
-  #         label="Download as a markdown file",
-  #         data=new,
-  #         file_name="README.md",
-  #         mime="text/markdown",
-  #     )
+  st.sidebar.button("Edit File", on_click=edit_callback, type="primary")
   
   st.sidebar.download_button(
-    label="Download as a markdown file",
-    data=answers,
+    label="Download as Markdown",
+    data=st.session_state.get('answers', ''),
     file_name="README.md",
-    mime="text/markdown",
-  )
+    mime="text/markdown")
 
-  # if 'answers' not in st.session_state:
-  #     st.session_state['answers'] = answers
-
-  # # Function to update the session state with the new answer
-  # def update_answers(new_answer):
-  #     st.session_state['answers'] = new_answer
-
-  # # Text area to edit the answer
-  # new_answer = st.text_area("Edit Answer", value=st.session_state.answers, on_change=update_answers)
-
-
-    
-
-
-  # st.sidebar.download_button(
-  #   label="Download Edited file",
-  #   data=new_answer,
-  #   file_name="README.md",
-  #   mime="text/markdown",
-  # )
-
-
-
-
-
-
+if generate:
+  add_sidebar_buttons()
 
